@@ -15,7 +15,19 @@ export const logoutUser = async (req, res) => {
         }
 
         const token = authHeader.split(" ")[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        let decoded;
+
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            if (error.name === "TokenExpiredError") {
+                return res.status(200).json({
+                    success: true,
+                    message: "Token already expired. Session is effectively logged out.",
+                });
+            }
+            throw error;
+        }
 
         const client = await getRedisClient();
         const remainingSeconds = Math.max(
