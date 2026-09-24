@@ -634,6 +634,32 @@ input {
   font-size: 1.1rem;
 }
 
+.requirements-list {
+  margin-top: 28px;
+}
+
+.requirements-list h3 {
+  margin: 0 0 12px;
+  color: #f5f8ff;
+  font-size: 1rem;
+}
+
+.requirement-row {
+  display: grid;
+  grid-template-columns: 72px 140px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  color: #a7b5c9;
+  font-size: 0.85rem;
+}
+
+.requirement-row strong { color: #dfeaf9; }
+.requirement-status { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+.is-matched .requirement-status { color: #6ed8bb; }
+.is-missing .requirement-status { color: #ff9b91; }
+
 .report-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -689,5 +715,10 @@ input {
   .report-panel {
     gap: 28px;
     padding: 24px;
+  }
+
+  .requirement-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }

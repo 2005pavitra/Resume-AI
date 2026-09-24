@@ -23,6 +23,19 @@ const evidenceSchema = new mongoose.Schema(
     { _id: false }
 );
 
+const requirementMatchSchema = new mongoose.Schema(
+    {
+        requirement: { type: String, required: true, trim: true },
+        category: { type: String, enum: ["required_skill", "preferred_skill", "experience", "project"] },
+        matched: { type: Boolean, required: true },
+        evidence: String,
+        sources: [{ type: String, enum: ["resume", "project", "github", "coding_profile", "portfolio"] }],
+        confidence: { type: String, enum: ["low", "medium", "high"] },
+        priority: { type: String, enum: ["critical", "important", "nice_to_have"] },
+    },
+    { _id: false }
+);
+
 const preparationItemSchema = new mongoose.Schema(
     {
         dayStart: { type: Number, min: 1 },
@@ -59,6 +72,7 @@ const reportSchema = new mongoose.Schema(
         jobDescription: { type: mongoose.Schema.Types.ObjectId, ref: "JobDescription", required: true },
         overallFit: { type: Number, min: 0, max: 100, required: true },
         scoreBreakdown: { type: scoreSchema, required: true },
+        requirementMatches: [requirementMatchSchema],
         strengths: [String],
         gaps: [evidenceSchema],
         recommendedProjects: [String],

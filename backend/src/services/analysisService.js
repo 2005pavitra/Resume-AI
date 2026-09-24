@@ -15,6 +15,34 @@ const includesSkill = (skills, requiredSkill) => {
     });
 };
 
+const buildRequirementMatches = (requiredSkills, preferredSkills, resumeSkills, projectSkills) => {
+    const createMatch = (requirement, category, priority) => {
+        const inResume = includesSkill(resumeSkills, requirement);
+        const inProject = includesSkill(projectSkills, requirement);
+        const sources = [];
+
+        if (inResume) sources.push("resume");
+        if (inProject) sources.push("project");
+
+        return {
+            requirement,
+            category,
+            matched: sources.length > 0,
+            evidence: sources.length
+                ? `Evidence found in ${sources.join(" and ")}`
+                : "No matching evidence found in the submitted profile",
+            sources,
+            confidence: sources.length > 1 ? "high" : sources.length === 1 ? "medium" : "low",
+            priority,
+        };
+    };
+
+    return [
+        ...requiredSkills.map((skill) => createMatch(skill, "required_skill", "critical")),
+        ...preferredSkills.map((skill) => createMatch(skill, "preferred_skill", "nice_to_have")),
+    ];
+};
+
 const buildPreparationPlan = (missingSkills) => missingSkills.slice(0, 5).map((skill, index) => ({
     dayStart: index * 2 + 1,
     dayEnd: index * 2 + 2,
@@ -44,14 +72,17 @@ export const compareResumeToJob = (resume, jobDescription) => {
         ? jobDescription.parsedRequirements
         : parseJobDescriptionText(jobDescription.rawText);
     const resumeSkills = unique(parsedProfile.skills || []);
+    const projectSkills = unique((parsedProfile.projects || []).flatMap((project) => project.technologies || []));
     const requiredSkills = unique(parsedRequirements.requiredSkills || []);
     const preferredSkills = unique(parsedRequirements.preferredSkills || []);
-    const matchedRequired = requiredSkills.filter((skill) => includesSkill(resumeSkills, skill));
-    const missingRequired = requiredSkills.filter((skill) => !includesSkill(resumeSkills, skill));
-    const matchedPreferred = preferredSkills.filter((skill) => includesSkill(resumeSkills, skill));
+    const requirementMatches = buildRequirementMatches(requiredSkills, preferredSkills, resumeSkills, projectSkills);
+    const requiredMatches = requirementMatches.filter((match) => match.category === "required_skill");
+    const preferredMatches = requirementMatches.filter((match) => match.category === "preferred_skill");
+    const matchedRequired = requiredMatches.filter((match) => match.matched).map((match) => match.requirement);
+    const missingRequired = requiredMatches.filter((match) => !match.matched).map((match) => match.requirement);
+    const matchedPreferred = preferredMatches.filter((match) => match.matched).map((match) => match.requirement);
     const dsaSkills = requiredSkills.filter((skill) => /data structure|algorithm|dsa|competitive/i.test(skill));
     const matchedDsa = dsaSkills.filter((skill) => includesSkill(resumeSkills, skill));
-    const projectSkills = unique((parsedProfile.projects || []).flatMap((project) => project.technologies || []));
     const matchedProjectSkills = requiredSkills.filter((skill) => includesSkill(projectSkills, skill));
     const scoreBreakdown = {
         skills: percentage(matchedRequired.length, requiredSkills.length),
@@ -67,21 +98,23 @@ export const compareResumeToJob = (resume, jobDescription) => {
         + scoreBreakdown.dsa * 0.1
         + scoreBreakdown.jobSpecific * 0.15
     );
-    const gaps = [...missingRequired, ...preferredSkills.filter((skill) => !includesSkill(resumeSkills, skill))]
+    const gaps = requirementMatches.filter((match) => !match.matched)
         .map((skill) => ({
-            skill,
+            skill: skill.requirement,
             detected: false,
-            sources: [],
-            evidence: "No matching skill evidence was found in the resume profile",
-            confidence: "low",
-            priority: requiredSkills.includes(skill) ? "critical" : "nice_to_have",
+            sources: skill.sources,
+            evidence: skill.evidence,
+            confidence: skill.confidence,
+            priority: skill.priority,
         }));
-    const strengths = matchedRequired.map((skill) => `Resume matches the required skill: ${skill}`);
+    const strengths = requirementMatches.filter((match) => match.matched)
+        .map((match) => `${match.requirement} evidence found in ${match.sources.join(" and ")}`);
     const recommendedProjects = (parsedProfile.projects || []).map((project) => project.name).filter(Boolean);
 
     return {
         overallFit,
         scoreBreakdown,
+        requirementMatches,
         strengths,
         gaps,
         recommendedProjects,

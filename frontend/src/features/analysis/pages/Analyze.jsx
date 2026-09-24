@@ -174,6 +174,16 @@ export default function Analyze() {
                                 </div>
                             ))}
                         </div>
+                        <div className="requirements-list">
+                            <h3>Requirement evidence</h3>
+                            {report.requirementMatches?.map((match) => (
+                                <div className={`requirement-row ${match.matched ? 'is-matched' : 'is-missing'}`} key={`${match.category}-${match.requirement}`}>
+                                    <span className="requirement-status">{match.matched ? 'Matched' : 'Missing'}</span>
+                                    <strong>{match.requirement}</strong>
+                                    <span>{match.evidence}</span>
+                                </div>
+                            ))}
+                        </div>
                         <div className="report-columns">
                             <div>
                                 <h3>Skill gaps</h3>
