@@ -3,6 +3,7 @@ import AnalysisReport from "../models/AnalysisReport.js";
 import JobDescription from "../models/JobDescription.js";
 import Resume from "../models/Resume.js";
 import { compareResumeToJob } from "../services/analysisService.js";
+import { generateAiInsights } from "../services/llmService.js";
 
 const findOwnedDocument = async (Model, id, userId) => Model.findOne({ _id: id, user: userId });
 
@@ -30,11 +31,13 @@ export const createAnalysis = async (req, res) => {
         }
 
         const comparison = compareResumeToJob(resume, jobDescription);
+        const aiInsights = await generateAiInsights(resume, jobDescription, comparison);
         const report = await AnalysisReport.create({
             user: req.user._id,
             resume: resume._id,
             jobDescription: jobDescription._id,
             ...comparison,
+            aiInsights: aiInsights || undefined,
             status: "complete",
             generatedAt: new Date(),
         });

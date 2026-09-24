@@ -1,4 +1,5 @@
 import { useAuth } from '../../auth/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const focusItems = [
     {
@@ -23,6 +24,7 @@ const focusItems = [
 
 export default function Home() {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     return (
         <main className="home-shell">
@@ -42,7 +44,7 @@ export default function Home() {
                         Welcome back, {user?.username || 'there'}. Your profile, practice, and job search tools are ready when you are.
                     </p>
                     <div className="hero-actions">
-                        <button className="primary-button" type="button">Start an interview</button>
+                        <button className="primary-button" type="button" onClick={() => navigate('/analyze')}>Start a job match</button>
                         <button className="secondary-button" type="button">View my profile</button>
                     </div>
                 </div>
@@ -70,7 +72,7 @@ export default function Home() {
                             <span className="card-number">{item.number}</span>
                             <h3>{item.title}</h3>
                             <p>{item.description}</p>
-                            <button className="card-link" type="button">{item.action} <span aria-hidden="true">-&gt;</span></button>
+                            <button className="card-link" type="button" onClick={() => navigate('/analyze')}>{item.action} <span aria-hidden="true">-&gt;</span></button>
                         </article>
                     ))}
                 </div>

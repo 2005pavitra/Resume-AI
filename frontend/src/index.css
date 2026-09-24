@@ -359,3 +359,276 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+.analysis-shell {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: 28px 40px 72px;
+}
+
+.analysis-header {
+  max-width: 760px;
+  padding: 80px 0 48px;
+}
+
+.analysis-header h1 {
+  margin: 0;
+  color: #f5f8ff;
+  font-size: clamp(2.5rem, 5vw, 4.8rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.analysis-header>p:last-child {
+  max-width: 620px;
+  margin: 24px 0 0;
+  color: #a7b5c9;
+  font-size: 1.05rem;
+}
+
+.analysis-form {
+  display: grid;
+  gap: 16px;
+}
+
+.input-panel {
+  padding: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.panel-heading {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.panel-index {
+  color: #6ed8bb;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.panel-heading h2 {
+  margin: 0 0 6px;
+  color: #f5f8ff;
+  font-size: 1.25rem;
+}
+
+.panel-heading p {
+  margin: 0;
+  color: #8fa1ba;
+  font-size: 0.9rem;
+}
+
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 130px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(110, 216, 187, 0.55);
+  color: #dfeaf9;
+  cursor: pointer;
+}
+
+.file-drop small {
+  color: #8fa1ba;
+}
+
+.file-drop input {
+  display: none;
+}
+
+.analysis-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.analysis-fields label,
+.input-panel>label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #dfeaf9;
+  font-size: 0.9rem;
+}
+
+.analysis-fields em {
+  color: #8fa1ba;
+  font-size: 0.8rem;
+  font-style: normal;
+}
+
+.analysis-fields input,
+.input-panel textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  padding: 12px 14px;
+  outline: none;
+  background: rgba(7, 17, 31, 0.65);
+  color: #f8fbff;
+  resize: vertical;
+}
+
+.analysis-fields input:focus,
+.input-panel textarea:focus {
+  border-color: #6ed8bb;
+  box-shadow: 0 0 0 3px rgba(110, 216, 187, 0.15);
+}
+
+.form-error {
+  margin: 4px 0 0;
+  color: #ff9b91;
+}
+
+.analysis-submit {
+  justify-self: start;
+  margin-top: 8px;
+}
+
+.analysis-submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.report-panel {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 36px;
+  margin-top: 72px;
+  padding: 32px;
+  border-top: 2px solid #6ed8bb;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.report-score strong {
+  display: block;
+  color: #6ed8bb;
+  font-size: 5rem;
+  line-height: 0.95;
+  letter-spacing: -0.08em;
+}
+
+.report-score>span {
+  color: #8fa1ba;
+}
+
+.report-content h2 {
+  margin: 0 0 24px;
+  color: #f5f8ff;
+  font-size: 1.7rem;
+}
+
+.ai-insights {
+  margin: 0 0 28px;
+  padding: 18px;
+  border-left: 2px solid #6ed8bb;
+  background: rgba(7, 17, 31, 0.55);
+}
+
+.ai-insights .eyebrow {
+  margin-bottom: 8px;
+}
+
+.ai-insights p:not(.eyebrow) {
+  margin: 0;
+  color: #dfeaf9;
+}
+
+.ai-insights ul {
+  margin: 14px 0 0;
+  padding-left: 18px;
+}
+
+.ai-insights li {
+  margin-bottom: 6px;
+  color: #a7b5c9;
+  font-size: 0.9rem;
+}
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.score-item {
+  padding: 12px;
+  background: rgba(7, 17, 31, 0.6);
+}
+
+.score-item span {
+  display: block;
+  color: #8fa1ba;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.score-item strong {
+  color: #dfeaf9;
+  font-size: 1.1rem;
+}
+
+.report-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 30px;
+}
+
+.report-columns h3 {
+  color: #f5f8ff;
+  font-size: 1rem;
+}
+
+.report-columns p,
+.report-columns li {
+  color: #a7b5c9;
+  font-size: 0.9rem;
+}
+
+.report-columns ul {
+  padding-left: 18px;
+}
+
+.report-columns li {
+  margin-bottom: 10px;
+}
+
+.report-columns li span {
+  display: block;
+  color: #6ed8bb;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+@media (max-width: 760px) {
+  .analysis-shell {
+    padding: 20px 20px 48px;
+  }
+
+  .analysis-header {
+    padding: 56px 0 36px;
+  }
+
+  .analysis-fields,
+  .report-columns,
+  .report-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .score-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .report-panel {
+    gap: 28px;
+    padding: 24px;
+  }
+}

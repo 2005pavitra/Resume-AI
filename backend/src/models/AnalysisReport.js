@@ -44,6 +44,14 @@ const questionSchema = new mongoose.Schema(
     { _id: false }
 );
 
+const aiInsightsSchema = new mongoose.Schema(
+    {
+        summary: String,
+        recommendations: [String],
+    },
+    { _id: false }
+);
+
 const reportSchema = new mongoose.Schema(
     {
         user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -56,6 +64,7 @@ const reportSchema = new mongoose.Schema(
         recommendedProjects: [String],
         preparationPlan: [preparationItemSchema],
         interviewQuestions: [questionSchema],
+        aiInsights: { type: aiInsightsSchema, default: undefined },
         analysisVersion: { type: String, default: "v1" },
         status: {
             type: String,
