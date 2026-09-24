@@ -74,3 +74,39 @@ export const listAnalyses = async (req, res) => {
         });
     }
 };
+
+export const getAnalysis = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+        return res.status(400).json({
+            success: false,
+            message: "A valid analysis id is required",
+        });
+    }
+
+    try {
+        const report = await AnalysisReport.findOne({
+            _id: req.params.id,
+            user: req.user._id,
+        })
+            .populate("resume", "title version")
+            .populate("jobDescription", "title company");
+
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                message: "Analysis report not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            report,
+        });
+    } catch (error) {
+        console.error("Get analysis error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error while loading analysis report",
+        });
+    }
+};

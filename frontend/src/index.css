@@ -332,6 +332,65 @@ input {
   margin-left: 6px;
 }
 
+.history-section {
+  margin-top: 72px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  padding-top: 32px;
+}
+
+.history-list {
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.history-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  background: transparent;
+}
+
+.history-item:hover {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.history-item h3 {
+  margin: 0 0 4px;
+  color: #f5f8ff;
+  font-size: 1rem;
+}
+
+.history-item p,
+.history-empty {
+  margin: 0;
+  color: #8fa1ba;
+  font-size: 0.85rem;
+}
+
+.history-item>strong {
+  color: #6ed8bb;
+  font-size: 1.5rem;
+}
+
+.history-item>strong span {
+  color: #8fa1ba;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.history-empty {
+  padding: 24px 0;
+}
+
 @media (max-width: 760px) {
   .home-shell {
     padding: 20px 20px 48px;

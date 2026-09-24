@@ -5,6 +5,7 @@ import Home from './features/home/pages/Home';
 import Protected from './features/auth/components/Protected';
 import { useAuth } from './features/auth/hooks/useAuth';
 import Analyze from './features/analysis/pages/Analyze';
+import Report from './features/analysis/pages/Report';
 
 export default function App() {
   const { user } = useAuth();
@@ -27,6 +28,14 @@ export default function App() {
         element={
           <Protected user={user}>
             <Analyze />
+          </Protected>
+        }
+      />
+      <Route
+        path="/reports/:id"
+        element={
+          <Protected user={user}>
+            <Report />
           </Protected>
         }
       />

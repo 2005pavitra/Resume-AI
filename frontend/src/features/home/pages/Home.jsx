@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const focusItems = [
     {
@@ -23,8 +26,28 @@ const focusItems = [
 ];
 
 export default function Home() {
-    const { user, logout } = useAuth();
+    const { user, token, logout } = useAuth();
     const navigate = useNavigate();
+    const [history, setHistory] = useState([]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        fetch(`${API_URL}/api/analysis`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (isMounted && data.success) setHistory(data.reports);
+            })
+            .catch(() => {
+                if (isMounted) setHistory([]);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [token]);
 
     return (
         <main className="home-shell">
@@ -76,6 +99,31 @@ export default function Home() {
                         </article>
                     ))}
                 </div>
+            </section>
+
+            <section className="history-section" aria-labelledby="history-title">
+                <div className="section-heading">
+                    <div>
+                        <p className="eyebrow">Saved work</p>
+                        <h2 id="history-title">Recent analyses</h2>
+                    </div>
+                    <button className="text-button" type="button" onClick={() => navigate('/analyze')}>New analysis</button>
+                </div>
+                {history.length ? (
+                    <div className="history-list">
+                        {history.slice(0, 5).map((report) => (
+                            <button className="history-item" key={report._id} type="button" onClick={() => navigate(`/reports/${report._id}`)}>
+                                <div>
+                                    <h3>{report.jobDescription?.title || 'Untitled role'}</h3>
+                                    <p>{report.jobDescription?.company || 'Company not specified'} · {new Date(report.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <strong>{report.overallFit}<span>/100</span></strong>
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="history-empty">Your completed job analyses will appear here.</div>
+                )}
             </section>
         </main>
     );
