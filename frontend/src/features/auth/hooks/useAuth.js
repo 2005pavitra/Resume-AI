@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, createElement, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
@@ -27,7 +28,7 @@ export function AuthProvider({ children }) {
     }, [token]);
 
     const login = async (email, password) => {
-        const response = await fetch('http://localhost:4000/api/auth/login', {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -47,7 +48,7 @@ export function AuthProvider({ children }) {
     };
 
     const register = async (username, email, password) => {
-        const response = await fetch('http://localhost:4000/api/auth/register', {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -72,7 +73,7 @@ export function AuthProvider({ children }) {
         }
 
         try {
-            await fetch('http://localhost:4000/api/auth/logout', {
+            await fetch(`${API_URL}/api/auth/logout`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ export function AuthProvider({ children }) {
     const getCurrentUser = async () => {
         if (!token) return null;
 
-        const response = await fetch('http://localhost:4000/api/auth/me', {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -109,20 +110,17 @@ export function AuthProvider({ children }) {
         return data.user;
     };
 
-    const value = useMemo(
-        () => ({
-            user,
-            token,
-            setUser,
-            login,
-            register,
-            logout,
-            getCurrentUser,
-        }),
-        [user, token]
-    );
+    const value = {
+        user,
+        token,
+        setUser,
+        login,
+        register,
+        logout,
+        getCurrentUser,
+    };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return createElement(AuthContext.Provider, { value }, children);
 }
 
 export function useAuth() {

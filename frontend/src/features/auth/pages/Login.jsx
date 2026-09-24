@@ -1,6 +1,30 @@
 import AuthLayout from '../components/AuthLayout';
+import { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
+    const { login } = useAuth();
+    const navigate = useNavigate();
+    const [form, setForm] = useState({ email: '', password: '' });
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setError('');
+        setIsSubmitting(true);
+
+        try {
+            await login(form.email, form.password);
+            navigate('/');
+        } catch (submitError) {
+            setError(submitError.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <AuthLayout
             title="Welcome back"
@@ -8,18 +32,19 @@ export default function Login() {
             linkText="Need an account?"
             linkTo="/register"
         >
-            <form className="auth-form">
+            <form className="auth-form" onSubmit={handleSubmit}>
                 <label>
                     <span>Email</span>
-                    <input type="email" placeholder="john@example.com" />
+                    <input type="email" placeholder="john@example.com" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
                 </label>
 
                 <label>
                     <span>Password</span>
-                    <input type="password" placeholder="••••••••" />
+                    <input type="password" placeholder="••••••••" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
                 </label>
 
-                <button type="submit">Login</button>
+                {error && <p role="alert">{error}</p>}
+                <button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Logging in...' : 'Login'}</button>
             </form>
         </AuthLayout>
     );
