@@ -1,11 +1,12 @@
 import AuthLayout from '../components/AuthLayout';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function Login() {
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [form, setForm] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,7 +18,7 @@ export default function Login() {
 
         try {
             await login(form.email, form.password);
-            navigate('/');
+            navigate(location.state?.from || '/dashboard', { replace: true });
         } catch (submitError) {
             setError(submitError.message);
         } finally {
