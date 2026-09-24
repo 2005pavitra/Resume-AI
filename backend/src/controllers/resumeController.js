@@ -1,4 +1,6 @@
 import Resume from "../models/Resume.js";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import { parseResumeText } from "../services/resumeParser.js";
 
 export const createResume = async (req, res) => {
     try {
@@ -49,6 +51,49 @@ export const listResumes = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Server error while loading resumes",
+        });
+    }
+};
+
+export const uploadResume = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            success: false,
+            message: "A PDF resume file is required",
+        });
+    }
+
+    try {
+        const parsedPdf = await pdfParse(req.file.buffer);
+        const rawText = parsedPdf.text.trim();
+
+        if (!rawText) {
+            return res.status(422).json({
+                success: false,
+                message: "The PDF does not contain readable text",
+            });
+        }
+
+        const parsedProfile = parseResumeText(rawText);
+
+        const resume = await Resume.create({
+            user: req.user._id,
+            title: req.body.title || req.file.originalname.replace(/\.pdf$/i, ""),
+            fileName: req.file.originalname,
+            rawText,
+            parsedProfile,
+            status: "ready",
+        });
+
+        return res.status(201).json({
+            success: true,
+            resume,
+        });
+    } catch (error) {
+        console.error("Upload resume error:", error);
+        return res.status(422).json({
+            success: false,
+            message: "Unable to parse the PDF resume",
         });
     }
 };
