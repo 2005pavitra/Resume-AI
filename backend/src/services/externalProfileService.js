@@ -184,20 +184,70 @@ const syncLeetCode = async (username) => {
     };
 };
 
-const syncCodeChef = async (username) => {
-    const profile = await jsonRequest(`https://codechef-api.vercel.app/handle/${encodeURIComponent(username)}`);
+const sanitizeHandle = (input) => {
+    if (!input) return "";
+    let val = String(input).trim();
+    try {
+        if (val.startsWith("http://") || val.startsWith("https://")) {
+            const u = new URL(val);
+            const segments = u.pathname.split("/").filter(Boolean);
+            val = segments[segments.length - 1] || val;
+        }
+    } catch {
+        // fallback
+    }
+    return val.replace(/^@/, "").replace(/[\/\.]+$/, "").trim();
+};
 
-    if (!profile || profile.status === "error") throw new Error("CodeChef profile was not found");
+const syncCodeChef = async (rawHandle) => {
+    const username = sanitizeHandle(rawHandle);
+    if (!username) throw new Error("A valid CodeChef username or profile URL is required");
 
-    const solved = Number(profile.totalProblemsSolved || profile.problemsSolved || 0);
-    const rating = Number(profile.currentRating || profile.rating || 0) || undefined;
+    const response = await fetch(`https://www.codechef.com/users/${encodeURIComponent(username)}`, {
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`CodeChef responded with HTTP ${response.status}`);
+    }
+
+    // If redirected to home page, profile does not exist
+    if (response.url === "https://www.codechef.com/" || response.url === "https://www.codechef.com") {
+        throw new Error(`CodeChef profile "${username}" was not found. Please verify the handle.`);
+    }
+
+    const html = await response.text();
+
+    const ratingMatch = html.match(/class="rating-number"[^>]*>([^<]+)/i);
+    const rating = ratingMatch ? parseInt(ratingMatch[1].trim(), 10) : undefined;
+
+    const starMatches = html.match(/class="rating-star"[^>]*>([\s\S]*?)<\/span>/i);
+    let stars;
+    if (starMatches) {
+        const starCount = (starMatches[1].match(/&#9733;|★/g) || []).length;
+        if (starCount) stars = `${starCount}★`;
+    }
+
+    const solvedMatch = html.match(/Fully Solved\s*\(([0-9]+)\)/i) || html.match(/Total Problems Solved:\s*([0-9]+)/i);
+    const solved = solvedMatch ? parseInt(solvedMatch[1], 10) : 0;
+
+    const highestRatingMatch = html.match(/\(Highest Rating\s*([0-9]+)\)/i);
+    const highestRating = highestRatingMatch ? parseInt(highestRatingMatch[1], 10) : rating;
+
+    const globalRankMatch = html.match(/<a href="\/ratings\/all"[^>]*>([0-9]+)<\/a>/i);
+    const globalRank = globalRankMatch ? parseInt(globalRankMatch[1], 10) : undefined;
 
     return {
         profileUrl: `https://www.codechef.com/users/${encodeURIComponent(username)}`,
         snapshot: {
             solved,
             rating,
-            contests: Number(profile.contestParticipated || profile.contests || 0) || undefined,
+            highestRating,
+            stars,
+            globalRank,
             activityLevel: activityLevel(solved),
             dsaAssessment: rating && rating >= 1700 ? "Strong Competitive Coder" : "Active Problem Solver",
         },
@@ -206,7 +256,10 @@ const syncCodeChef = async (username) => {
 
 const providers = { github: syncGitHub, leetcode: syncLeetCode, codeforces: syncCodeforces, codechef: syncCodeChef };
 
-export const syncExternalProfile = async (provider, username) => {
+export const syncExternalProfile = async (provider, rawUsername) => {
+    const username = sanitizeHandle(rawUsername);
+    if (!username) throw new Error(`Please provide a valid ${provider} handle or URL`);
+
     const syncProvider = providers[provider];
     if (!syncProvider) throw new Error("Unsupported external profile provider");
 

@@ -76,11 +76,27 @@ export default function Profiles() {
         setTimeout(() => setSuccessMessage(''), 3500);
     };
 
+    const cleanHandle = (input) => {
+        if (!input) return '';
+        let val = String(input).trim();
+        try {
+            if (val.startsWith('http://') || val.startsWith('https://')) {
+                const u = new URL(val);
+                const segments = u.pathname.split('/').filter(Boolean);
+                val = segments[segments.length - 1] || val;
+            }
+        } catch {
+            // ignore
+        }
+        return val.replace(/^@/, '').replace(/[\/\.]+$/, '').trim();
+    };
+
     const sync = async (provider) => {
         setError('');
-        const handle = usernames[provider];
-        if (!handle || !handle.trim()) {
-            setError(`Please enter a valid ${provider} username.`);
+        const raw = usernames[provider];
+        const handle = cleanHandle(raw);
+        if (!handle) {
+            setError(`Please enter a valid ${provider} username or profile URL.`);
             return;
         }
 
@@ -93,7 +109,7 @@ export default function Profiles() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ username: handle.trim() }),
+                body: JSON.stringify({ username: handle }),
             });
             const data = await response.json();
             if (!response.ok || !data.success) throw new Error(data.message || `Unable to sync ${provider}`);
