@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { SignalLogo, UploadCloudIcon, FileTextIcon } from '../../../components/Icons';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -18,9 +19,11 @@ async function request(url, options) {
 export default function Analyze() {
     const { token } = useAuth();
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
     const [form, setForm] = useState({ title: '', company: '', rawText: '' });
     const [resumeFile, setResumeFile] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
     const [targetType, setTargetType] = useState('comprehensive');
     const [days, setDays] = useState(14);
     const [error, setError] = useState('');
@@ -29,6 +32,32 @@ export default function Analyze() {
 
     const updateForm = (field, value) => {
         setForm((current) => ({ ...current, [field]: value }));
+    };
+
+    const handleFileChange = (file) => {
+        if (file && (file.type === 'application/pdf' || file.name.endsWith('.pdf'))) {
+            setResumeFile(file);
+            setError('');
+        } else if (file) {
+            setError('Please choose a valid PDF file.');
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileChange(e.dataTransfer.files[0]);
+        }
     };
 
     const handleSubmit = async (event) => {
@@ -92,150 +121,226 @@ export default function Analyze() {
     };
 
     return (
-        <main className="analysis-shell">
-            <nav className="home-nav" aria-label="Analysis navigation">
-                <Link className="brand-mark" to="/dashboard">career<span>signal</span></Link>
-                <div className="home-nav-actions">
-                    <Link className="text-button" to="/profiles">Connected Profiles</Link>
-                    <Link className="text-button" to="/dashboard">Dashboard</Link>
-                </div>
-            </nav>
+        <div className="app-canvas">
+            {/* Ambient Background Lights */}
+            <div className="ambient-glow glow-top-left" />
+            <div className="ambient-glow glow-top-right" />
 
-            <header className="analysis-header">
-                <span className="section-eyebrow">Evidence-Based Career Analysis</span>
-                <h1>Map your experience to the target role.</h1>
-                <p>Upload your resume and the job description. Our explainable engine cross-references evidence from your resume, GitHub activity, and competitive programming profiles.</p>
-            </header>
-
-            <form className="analysis-form" onSubmit={handleSubmit}>
-                <section className="input-panel">
-                    <div className="panel-heading">
-                        <span className="panel-index">01</span>
-                        <div>
-                            <h2>Your Resume</h2>
-                            <p>Upload your latest text-based PDF resume.</p>
-                        </div>
+            <div className="home-shell">
+                <nav className="glass-nav" aria-label="Analysis navigation">
+                    <Link className="brand-logo" to="/dashboard">
+                        <span className="brand-icon">
+                            <SignalLogo size={18} />
+                        </span>
+                        career<span className="brand-highlight">signal</span>
+                    </Link>
+                    <div className="nav-right-cluster">
+                        <Link className="nav-link" to="/profiles">Connected Profiles</Link>
+                        <Link className="nav-link" to="/dashboard">Dashboard</Link>
                     </div>
-                    <label className="file-drop">
-                        <span className="file-name-display">{resumeFile ? `📄 ${resumeFile.name}` : '📁 Choose or drop your Resume PDF'}</span>
-                        <small>{resumeFile ? `${(resumeFile.size / 1024).toFixed(1)} KB • Ready for extraction` : 'Supports PDF up to 5 MB'}</small>
-                        <input
-                            type="file"
-                            accept="application/pdf,.pdf"
-                            onChange={(event) => setResumeFile(event.target.files[0] || null)}
-                        />
-                    </label>
-                </section>
+                </nav>
 
-                <section className="input-panel">
-                    <div className="panel-heading">
-                        <span className="panel-index">02</span>
-                        <div>
-                            <h2>Target Role & Company</h2>
-                            <p>Provide the job details and full job description text.</p>
-                        </div>
+                <header className="page-header-center">
+                    <div className="hero-announcement-chip">
+                        <span className="chip-pulsar" />
+                        <span className="chip-text">Multi-Source Verification Engine</span>
                     </div>
-                    <div className="analysis-fields">
-                        <label>
-                            <span>Job Title</span>
+                    <h1>Map Your Experience to the Target Role</h1>
+                    <p>
+                        Upload your resume and paste the job description. Our engine correlates your background with live GitHub activity and competitive programming profiles to uncover blockers and build a customized sprint plan.
+                    </p>
+                </header>
+
+                <form className="analyze-stepper-form" onSubmit={handleSubmit}>
+                    {/* STEP 1: RESUME UPLOAD */}
+                    <div className="glass-stepper-card">
+                        <div className="stepper-card-header">
+                            <span className="step-num-bubble">01</span>
+                            <div>
+                                <h2>Candidate Resume</h2>
+                                <p>Upload your latest text-based PDF resume</p>
+                            </div>
+                        </div>
+
+                        <div
+                            className={`dropzone-box ${isDragging ? 'dragging' : ''} ${resumeFile ? 'has-file' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                            role="button"
+                            tabIndex={0}
+                        >
                             <input
-                                value={form.title}
-                                onChange={(event) => updateForm('title', event.target.value)}
-                                placeholder="e.g. Senior Backend Engineer"
+                                ref={fileInputRef}
+                                type="file"
+                                accept="application/pdf,.pdf"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleFileChange(e.target.files[0])}
+                            />
+
+                            {resumeFile ? (
+                                <div className="file-active-preview">
+                                    <span className="file-icon-badge">
+                                        <FileTextIcon size={28} />
+                                    </span>
+                                    <div className="file-details">
+                                        <strong>{resumeFile.name}</strong>
+                                        <div className="file-meta-row">
+                                            <span className="size-badge">{(resumeFile.size / 1024).toFixed(1)} KB</span>
+                                            <span className="ready-badge">Ready for extraction</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="btn-change-file"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            fileInputRef.current?.click();
+                                        }}
+                                    >
+                                        Change file
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="dropzone-idle-content">
+                                    <div className="upload-cloud-icon">
+                                        <UploadCloudIcon size={38} />
+                                    </div>
+                                    <h3>Click or drag resume PDF here</h3>
+                                    <p>Supports standard text-based PDF formats up to 5 MB</p>
+                                    <span className="btn-browse-file">Browse Files</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* STEP 2: JOB DESCRIPTION */}
+                    <div className="glass-stepper-card">
+                        <div className="stepper-card-header">
+                            <span className="step-num-bubble">02</span>
+                            <div>
+                                <h2>Target Role & Requirements</h2>
+                                <p>Provide the job title, company, and complete requirements</p>
+                            </div>
+                        </div>
+
+                        <div className="dual-inputs-grid">
+                            <div className="field-group">
+                                <label htmlFor="job-title-input">Job Title</label>
+                                <input
+                                    id="job-title-input"
+                                    className="glass-input"
+                                    value={form.title}
+                                    onChange={(event) => updateForm('title', event.target.value)}
+                                    placeholder="e.g. Senior Backend Engineer"
+                                    required
+                                />
+                            </div>
+
+                            <div className="field-group">
+                                <label htmlFor="company-name-input">Company Name</label>
+                                <input
+                                    id="company-name-input"
+                                    className="glass-input"
+                                    value={form.company}
+                                    onChange={(event) => updateForm('company', event.target.value)}
+                                    placeholder="e.g. Stripe, Razorpay, Google"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="field-group textarea-group">
+                            <label htmlFor="jd-textarea">Full Job Description</label>
+                            <textarea
+                                id="jd-textarea"
+                                className="glass-textarea"
+                                value={form.rawText}
+                                onChange={(event) => updateForm('rawText', event.target.value)}
+                                placeholder="Paste the complete job description, requirements, responsibilities, and qualifications here..."
+                                rows="8"
                                 required
                             />
-                        </label>
-                        <label>
-                            <span>Company</span>
-                            <input
-                                value={form.company}
-                                onChange={(event) => updateForm('company', event.target.value)}
-                                placeholder="e.g. Stripe, Razorpay, Google"
-                            />
-                        </label>
-                    </div>
-                    <label className="textarea-label">
-                        <span>Job Description Text</span>
-                        <textarea
-                            value={form.rawText}
-                            onChange={(event) => updateForm('rawText', event.target.value)}
-                            placeholder="Paste the complete job description, requirements, and responsibilities here..."
-                            rows="10"
-                            required
-                        />
-                    </label>
-                </section>
-
-                <section className="input-panel">
-                    <div className="panel-heading">
-                        <span className="panel-index">03</span>
-                        <div>
-                            <h2>Sprint Customization</h2>
-                            <p>Configure the preparation roadmap based on your upcoming round.</p>
                         </div>
                     </div>
 
-                    <div className="sprint-config-grid">
-                        <div className="sprint-config-item">
-                            <span className="sprint-label">Preparation Target:</span>
-                            <div className="pill-selector">
-                                <button
-                                    type="button"
-                                    className={`pill-btn ${targetType === 'comprehensive' ? 'active' : ''}`}
-                                    onClick={() => setTargetType('comprehensive')}
-                                >
-                                    🎯 Full Loop
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`pill-btn ${targetType === 'oa' ? 'active' : ''}`}
-                                    onClick={() => setTargetType('oa')}
-                                >
-                                    💻 Online Assessment (OA)
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`pill-btn ${targetType === 'technical' ? 'active' : ''}`}
-                                    onClick={() => setTargetType('technical')}
-                                >
-                                    ⚙️ Tech & System Design
-                                </button>
+                    {/* STEP 3: SPRINT CUSTOMIZATION */}
+                    <div className="glass-stepper-card">
+                        <div className="stepper-card-header">
+                            <span className="step-num-bubble">03</span>
+                            <div>
+                                <h2>Sprint Preparation Target</h2>
+                                <p>Configure the preparation timeline and target round focus</p>
                             </div>
                         </div>
 
-                        <div className="sprint-config-item">
-                            <span className="sprint-label">Days Until Round:</span>
-                            <div className="days-selector">
-                                {[3, 7, 14, 30].map((d) => (
+                        <div className="sprint-config-layout">
+                            <div className="config-block">
+                                <span className="config-label">Target Round Focus:</span>
+                                <div className="pill-selector">
                                     <button
-                                        key={d}
                                         type="button"
-                                        className={`day-btn ${days === d ? 'active' : ''}`}
-                                        onClick={() => setDays(d)}
+                                        className={`pill-btn ${targetType === 'comprehensive' ? 'active' : ''}`}
+                                        onClick={() => setTargetType('comprehensive')}
                                     >
-                                        {d} Days
+                                        Full Loop (All Rounds)
                                     </button>
-                                ))}
+                                    <button
+                                        type="button"
+                                        className={`pill-btn ${targetType === 'oa' ? 'active' : ''}`}
+                                        onClick={() => setTargetType('oa')}
+                                    >
+                                        Online Assessment (OA)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`pill-btn ${targetType === 'technical' ? 'active' : ''}`}
+                                        onClick={() => setTargetType('technical')}
+                                    >
+                                        Technical & System Design
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="config-block">
+                                <span className="config-label">Days Left Until Interview:</span>
+                                <div className="days-selector">
+                                    {[3, 7, 14, 30].map((d) => (
+                                        <button
+                                            key={d}
+                                            type="button"
+                                            className={`day-btn ${days === d ? 'active' : ''}`}
+                                            onClick={() => setDays(d)}
+                                        >
+                                            {d} Days
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </section>
 
-                {error && <p className="form-error" role="alert">{error}</p>}
+                    {error && (
+                        <div className="form-error-banner" role="alert">
+                            <span>Alert:</span>
+                            <p>{error}</p>
+                        </div>
+                    )}
 
-                <div className="submit-action-row">
-                    <button className="primary-button analysis-submit-btn" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                            <span className="btn-loading-content">
-                                <span className="spinner-sm" />
-                                {submittingStep || 'Processing match...'}
-                            </span>
-                        ) : (
-                            'Generate My Match Report →'
-                        )}
-                    </button>
-                </div>
-            </form>
-        </main>
+                    <div className="submit-action-bar">
+                        <button className="btn-glow-primary btn-submit-large" type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? (
+                                <span className="submit-loading-wrap">
+                                    <span className="feed-spinner" />
+                                    <span>{submittingStep || 'Analyzing match signals...'}</span>
+                                </span>
+                            ) : (
+                                <span>Generate Match Analysis & Report →</span>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }

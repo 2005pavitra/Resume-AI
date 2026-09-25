@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
+import {
+    SignalLogo,
+    DownloadIcon,
+    PrinterIcon,
+    ClockIcon,
+    CheckCircleIcon,
+    AlertTriangleIcon
+} from '../../../components/Icons';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -122,7 +130,7 @@ export default function Report() {
         const role = report.jobDescription?.title || 'Target Role';
         const company = report.jobDescription?.company || 'Company';
 
-        let md = `# 🎯 CareerSignal Job Fit Analysis Report\n\n`;
+        let md = `# CareerSignal Job Fit Analysis Report\n\n`;
         md += `**Target Role**: ${role}\n`;
         md += `**Company**: ${company}\n`;
         md += `**Overall Fit Score**: ${report.overallFit}/100\n`;
@@ -130,7 +138,7 @@ export default function Report() {
         md += `**Generated**: ${new Date(report.createdAt).toLocaleDateString()}\n\n`;
         md += `---\n\n`;
 
-        md += `## 📊 1. Job Fit Score Breakdown\n`;
+        md += `## 1. Job Fit Score Breakdown\n`;
         md += `- Overall Fit: **${report.overallFit}/100**\n`;
         if (report.scoreBreakdown) {
             md += `- Technical Skills: ${report.scoreBreakdown.skills}%\n`;
@@ -151,24 +159,24 @@ export default function Report() {
             md += `\n`;
         }
 
-        md += `---\n\n## ⚖️ 2. Skill Gap Intelligence\n`;
+        md += `---\n\n## 2. Skill Gap Intelligence\n`;
         if (report.skillGapsCategorized) {
-            md += `### 🟢 Already Strong (Verified across multiple sources):\n`;
+            md += `### Verified Strong (Verified across multiple sources):\n`;
             (report.skillGapsCategorized.alreadyStrong || []).forEach((s) => {
                 md += `- **${s.skill}** [${s.confidence?.toUpperCase()} confidence]: ${s.evidence}\n`;
             });
-            md += `\n### 🟡 Partial Matches (Claimed in resume, unverified in GitHub/projects):\n`;
+            md += `\n### Partial Matches (Claimed in resume, unverified in GitHub/projects):\n`;
             (report.skillGapsCategorized.partial || []).forEach((p) => {
                 md += `- **${p.skill}**: ${p.evidence}\n`;
             });
-            md += `\n### 🔴 Missing Critical Requirements:\n`;
+            md += `\n### Missing Critical Requirements:\n`;
             (report.skillGapsCategorized.missing || []).forEach((m) => {
                 md += `- **${m.skill}** [${m.priority?.toUpperCase()}]: ${m.evidence}\n`;
             });
             md += `\n`;
         }
 
-        md += `---\n\n## 🥇 3. Project Relevance Leaderboard\n`;
+        md += `---\n\n## 3. Project Relevance Leaderboard\n`;
         if (report.projectRelevance?.rankedProjects) {
             report.projectRelevance.rankedProjects.forEach((p) => {
                 md += `### Rank ${p.rank}: ${p.name} [${p.matchTier?.toUpperCase()}] (Score: ${p.score}/100)\n`;
@@ -179,7 +187,7 @@ export default function Report() {
             md += `**Strategic Interview Advice**: ${report.projectRelevance.advice}\n\n`;
         }
 
-        md += `---\n\n## 📅 4. Personalized ${report.customDays || 14}-Day Preparation Sprint\n`;
+        md += `---\n\n## 4. Personalized ${report.customDays || 14}-Day Preparation Sprint\n`;
         (report.preparationPlan || []).forEach((p) => {
             md += `### Days ${p.dayStart}-${p.dayEnd}: ${p.topic} [${p.priority?.toUpperCase()}]\n`;
             md += `*Focus Area: ${p.focusArea || 'General'}*\n`;
@@ -189,7 +197,7 @@ export default function Report() {
             md += `\n`;
         });
 
-        md += `---\n\n## ✍️ 5. Resume Optimization Studio\n`;
+        md += `---\n\n## 5. Resume Optimization Studio\n`;
         if (report.resumeOptimization?.bulletRewrites) {
             md += `### Recommended Bullet Rewrites (Google X-Y-Z Formula):\n`;
             report.resumeOptimization.bulletRewrites.forEach((b, idx) => {
@@ -206,7 +214,7 @@ export default function Report() {
             md += `*Guidance: ${report.resumeOptimization.atsKeywords.caution}*\n\n`;
         }
 
-        md += `---\n\n## ⚠️ 6. "Why Am I Not Getting Shortlisted?" Diagnostic\n`;
+        md += `---\n\n## 6. "Why Am I Not Getting Shortlisted?" Diagnostic\n`;
         if (report.shortlistBlockers?.blockers) {
             report.shortlistBlockers.blockers.forEach((b) => {
                 md += `### [${b.severity?.toUpperCase()} RISK] ${b.title}\n`;
@@ -220,7 +228,7 @@ export default function Report() {
             md += `\n`;
         }
 
-        md += `---\n\n## 💬 7. Predicted Interview Questions\n`;
+        md += `---\n\n## 7. Predicted Interview Questions\n`;
         if (report.interviewQuestionsGrouped) {
             md += `### Technical Architecture Questions:\n`;
             (report.interviewQuestionsGrouped.technical || []).forEach((q, i) => {
@@ -297,13 +305,15 @@ export default function Report() {
             {toastMessage && <div className="floating-toast">{toastMessage}</div>}
 
             <nav className="home-nav no-print" aria-label="Report navigation">
-                <Link className="brand-mark" to="/dashboard">career<span>signal</span></Link>
+                <Link className="brand-mark" to="/dashboard">
+                    <SignalLogo size={18} /> career<span>signal</span>
+                </Link>
                 <div className="nav-report-actions">
                     <button className="secondary-button btn-sm" type="button" onClick={handleDownloadMarkdown}>
-                        📥 Download .md
+                        <DownloadIcon size={14} /> Download Markdown
                     </button>
                     <button className="secondary-button btn-sm" type="button" onClick={handlePrint}>
-                        🖨️ Export PDF
+                        <PrinterIcon size={14} /> Export PDF
                     </button>
                     <Link className="text-button" to="/dashboard">Dashboard</Link>
                 </div>
@@ -314,9 +324,13 @@ export default function Report() {
                     <div className="badge-row">
                         <span className="hero-badge company-badge">{report.jobDescription?.company || 'Company'}</span>
                         <span className="hero-badge sprint-badge">
-                            ⏱️ {report.customDays || 14}-Day Sprint • {(report.targetType || 'comprehensive').toUpperCase()}
+                            <ClockIcon size={12} /> {report.customDays || 14}-Day Sprint • {(report.targetType || 'comprehensive').toUpperCase()}
                         </span>
-                        {report.status === 'complete' && <span className="hero-badge verified-badge">✓ Analyzed</span>}
+                        {report.status === 'complete' && (
+                            <span className="hero-badge verified-badge">
+                                <CheckCircleIcon size={12} /> Verified Analysis
+                            </span>
+                        )}
                     </div>
                     <h1>{report.jobDescription?.title || 'Target Role'}</h1>
                     <p className="report-subtitle">
@@ -337,7 +351,7 @@ export default function Report() {
             {/* SPRINT CUSTOMIZER BAR */}
             <section className="sprint-customizer-banner no-print" aria-label="Sprint Customizer">
                 <div className="customizer-copy">
-                    <span className="customizer-tag">⚡ Sprint Customizer</span>
+                    <span className="customizer-tag">Sprint Customizer & Roadmap</span>
                     <h3>Adjust preparation timeline & target</h3>
                     <p>Tailor the study schedule and interview focus based on your upcoming round.</p>
                 </div>
@@ -354,7 +368,7 @@ export default function Report() {
                                     handleApplyCustomization(customDays, 'comprehensive');
                                 }}
                             >
-                                🎯 Full Loop
+                                Full Loop
                             </button>
                             <button
                                 type="button"
@@ -364,7 +378,7 @@ export default function Report() {
                                     handleApplyCustomization(customDays, 'oa');
                                 }}
                             >
-                                💻 Online Assessment (OA)
+                                Online Assessment (OA)
                             </button>
                             <button
                                 type="button"
@@ -374,7 +388,7 @@ export default function Report() {
                                     handleApplyCustomization(customDays, 'technical');
                                 }}
                             >
-                                ⚙️ Tech & System Design
+                                Technical & System Design
                             </button>
                         </div>
                     </div>
@@ -514,7 +528,7 @@ export default function Report() {
                     <div className="signals-dual-column">
                         <div className="signal-block strong-block">
                             <h4>
-                                <span className="signal-icon green-icon">✓</span> Verified Strengths
+                                <CheckCircleIcon size={16} /> Verified Strengths
                             </h4>
                             <ul className="signal-list">
                                 {(report.scoreExplanations?.strong || []).map((s, idx) => (
@@ -528,7 +542,7 @@ export default function Report() {
 
                         <div className="signal-block gaps-block">
                             <h4>
-                                <span className="signal-icon red-icon">⚠</span> Gaps & Missing Proof
+                                <AlertTriangleIcon size={16} /> Gaps & Missing Proof
                             </h4>
                             <ul className="signal-list">
                                 {(report.scoreExplanations?.missingOrWeak || []).map((m, idx) => (
@@ -609,21 +623,21 @@ export default function Report() {
                             className={`tab-btn ${skillFilter === 'strong' ? 'active' : ''}`}
                             onClick={() => setSkillFilter('strong')}
                         >
-                            🟢 Already Strong
+                            Verified Strong
                         </button>
                         <button
                             type="button"
                             className={`tab-btn ${skillFilter === 'partial' ? 'active' : ''}`}
                             onClick={() => setSkillFilter('partial')}
                         >
-                            🟡 Partial Claims
+                            Partial Evidence
                         </button>
                         <button
                             type="button"
                             className={`tab-btn ${skillFilter === 'missing' ? 'active' : ''}`}
                             onClick={() => setSkillFilter('missing')}
                         >
-                            🔴 Missing
+                            Identified Gaps
                         </button>
                     </div>
                 </div>
@@ -673,7 +687,7 @@ export default function Report() {
                             <div key={project.name} className={`ranked-project-card tier-${project.matchTier}`}>
                                 <div className="project-card-header">
                                     <span className="project-rank-crown">
-                                        {project.rank === 1 ? '🥇 Primary Lead' : project.rank === 2 ? '🥈 Supporting' : '🥉 Lower Relevance'}
+                                        {project.rank === 1 ? '#1 Lead Architecture' : project.rank === 2 ? '#2 Supporting Project' : '#3 Secondary Project'}
                                     </span>
                                     <span className="project-score-badge">{project.score}% Match</span>
                                 </div>
@@ -685,7 +699,7 @@ export default function Report() {
                                         <span key={tech} className="tech-badge">{tech}</span>
                                     ))}
                                     {project.deploymentEvidence && (
-                                        <span className="tech-badge deploy-badge">✓ Docker / Cloud</span>
+                                        <span className="tech-badge deploy-badge">Verified Deployment</span>
                                     )}
                                 </div>
 
@@ -700,7 +714,7 @@ export default function Report() {
 
                     {report.projectRelevance.advice && (
                         <div className="project-advice-box">
-                            <strong>💡 Technical Interview Strategy:</strong>
+                            <strong>Technical Interview Strategy:</strong>
                             <p>{report.projectRelevance.advice}</p>
                         </div>
                     )}
@@ -799,7 +813,7 @@ export default function Report() {
                                     <h4>Matched Keywords in Resume</h4>
                                     <div className="keyword-chip-list">
                                         {(report.resumeOptimization.atsKeywords.found || []).map((k) => (
-                                            <span key={k} className="chip chip-found">✓ {k}</span>
+                                            <span key={k} className="chip chip-found">{k}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -916,7 +930,7 @@ export default function Report() {
                                         setEvaluationResult(null);
                                     }}
                                 >
-                                    {practiceIndex === idx ? 'Close Practice Studio' : '🎙️ Practice Answering with AI Coach'}
+                                    {practiceIndex === idx ? 'Close Practice Studio' : 'Practice Answer with AI Coach'}
                                 </button>
                             </div>
 
