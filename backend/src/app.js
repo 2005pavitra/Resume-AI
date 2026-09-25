@@ -11,20 +11,32 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = new Set([
-    process.env.FRONTEND_URL,
+const configuredOrigins = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((o) => o.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+const defaultOrigins = [
     "http://localhost:5173",
     "http://localhost:5174",
-].filter(Boolean));
+    "http://localhost:3000",
+];
+
+const allowedOrigins = new Set([...defaultOrigins, ...configuredOrigins]);
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.has(origin)) {
+        if (!origin) return callback(null, true);
+        if (process.env.FRONTEND_URL === "*") return callback(null, true);
+
+        const normalizedOrigin = origin.replace(/\/$/, "");
+        if (allowedOrigins.has(normalizedOrigin)) {
             return callback(null, true);
         }
 
-        return callback(new Error("Origin is not allowed by CORS"));
+        return callback(new Error(`Origin ${origin} is not allowed by CORS`));
     },
+    credentials: true,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

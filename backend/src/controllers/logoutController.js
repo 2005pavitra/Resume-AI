@@ -30,14 +30,16 @@ export const logoutUser = async (req, res) => {
         }
 
         const client = await getRedisClient();
-        const remainingSeconds = Math.max(
-            1,
-            Math.floor((decoded.exp * 1000 - Date.now()) / 1000)
-        );
+        if (client) {
+            const remainingSeconds = Math.max(
+                1,
+                Math.floor((decoded.exp * 1000 - Date.now()) / 1000)
+            );
 
-        await client.set(`blacklisted:${decoded.jti}`, "1", {
-            EX: remainingSeconds,
-        });
+            await client.set(`blacklisted:${decoded.jti}`, "1", {
+                EX: remainingSeconds,
+            });
+        }
 
         return res.status(200).json({
             success: true,

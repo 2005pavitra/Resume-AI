@@ -19,13 +19,14 @@ export const protect = async (req, res, next) => {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         const client = await getRedisClient();
-        const isBlacklisted = await client.get(`blacklisted:${decoded.jti}`);
-
-        if (isBlacklisted) {
-            return res.status(401).json({
-                success: false,
-                message: "Session expired. Please login again.",
-            });
+        if (client) {
+            const isBlacklisted = await client.get(`blacklisted:${decoded.jti}`);
+            if (isBlacklisted) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Session expired. Please login again.",
+                });
+            }
         }
 
         const user = await User.findById(decoded.id).select("-password");
