@@ -1,6 +1,10 @@
+import crypto from "crypto";
 import JobDescription from "../models/JobDescription.js";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { parseJobDescriptionText } from "../services/jobDescriptionParser.js";
+import { publishEvent } from "../config/kafka.js";
+
+export const computeHash = (text) => crypto.createHash("sha256").update((text || "").trim().toLowerCase().replace(/\s+/g, " ")).digest("hex");
 
 export const createJobDescription = async (req, res) => {
     try {
@@ -13,13 +17,52 @@ export const createJobDescription = async (req, res) => {
             });
         }
 
-        const jobDescription = await JobDescription.create({
+        const contentHash = computeHash(rawText);
+        const normalizedTitle = title.trim();
+        const normalizedCompany = (company || "").trim();
+
+        let jobDescription = await JobDescription.findOne({
+            user: req.user._id,
+            $or: [
+                { contentHash },
+                {
+                    title: new RegExp(`^${normalizedTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+                    company: normalizedCompany ? new RegExp(`^${normalizedCompany.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") : undefined,
+                },
+            ].filter(Boolean),
+        });
+
+        if (jobDescription) {
+            jobDescription.rawText = rawText;
+            jobDescription.contentHash = contentHash;
+            jobDescription.title = title;
+            if (company) jobDescription.company = company;
+            if (sourceUrl) jobDescription.sourceUrl = sourceUrl;
+            jobDescription.parsedRequirements = parsedRequirements || parseJobDescriptionText(rawText);
+            await jobDescription.save();
+
+            return res.status(200).json({
+                success: true,
+                jobDescription,
+                deduplicated: true,
+            });
+        }
+
+        jobDescription = await JobDescription.create({
             user: req.user._id,
             title,
             company,
             sourceUrl,
             rawText,
+            contentHash,
             parsedRequirements: parsedRequirements || parseJobDescriptionText(rawText),
+        });
+
+        void publishEvent("job-description.ingested", {
+            entityId: jobDescription._id,
+            userId: req.user._id,
+            jobDescriptionId: jobDescription._id,
+            source: "text",
         });
 
         return res.status(201).json({
@@ -73,14 +116,53 @@ export const uploadJobDescription = async (req, res) => {
             });
         }
 
-        const parsedRequirements = parseJobDescriptionText(rawText);
-        const jobDescription = await JobDescription.create({
+        const contentHash = computeHash(rawText);
+        const title = req.body.title || req.file.originalname.replace(/\.pdf$/i, "");
+        const company = req.body.company;
+
+        let jobDescription = await JobDescription.findOne({
             user: req.user._id,
-            title: req.body.title || req.file.originalname.replace(/\.pdf$/i, ""),
-            company: req.body.company,
+            $or: [
+                { contentHash },
+                {
+                    title: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+                    company: company ? new RegExp(`^${company.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") : undefined,
+                },
+            ].filter(Boolean),
+        });
+
+        if (jobDescription) {
+            jobDescription.rawText = rawText;
+            jobDescription.contentHash = contentHash;
+            jobDescription.title = title;
+            if (company) jobDescription.company = company;
+            if (req.body.sourceUrl) jobDescription.sourceUrl = req.body.sourceUrl;
+            jobDescription.parsedRequirements = parseJobDescriptionText(rawText);
+            await jobDescription.save();
+
+            return res.status(200).json({
+                success: true,
+                jobDescription,
+                deduplicated: true,
+            });
+        }
+
+        const parsedRequirements = parseJobDescriptionText(rawText);
+        jobDescription = await JobDescription.create({
+            user: req.user._id,
+            title,
+            company,
             sourceUrl: req.body.sourceUrl,
             rawText,
+            contentHash,
             parsedRequirements,
+        });
+
+        void publishEvent("job-description.ingested", {
+            entityId: jobDescription._id,
+            userId: req.user._id,
+            jobDescriptionId: jobDescription._id,
+            source: "pdf",
         });
 
         return res.status(201).json({
@@ -95,3 +177,4 @@ export const uploadJobDescription = async (req, res) => {
         });
     }
 };
+

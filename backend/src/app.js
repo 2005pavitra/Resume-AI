@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import jobDescriptionRoutes from "./routes/jobDescriptionRoutes.js";
 import analysisRoutes from "./routes/analysisRoutes.js";
+import externalProfileRoutes from "./routes/externalProfileRoutes.js";
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/resumes", resumeRoutes);
 app.use("/api/jobs", jobDescriptionRoutes);
 app.use("/api/analysis", analysisRoutes);
+app.use("/api/profiles", externalProfileRoutes);
 
 app.use((err, req, res, next) => {
     console.error(err.stack);

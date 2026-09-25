@@ -1,6 +1,10 @@
+import crypto from "crypto";
 import Resume from "../models/Resume.js";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { parseResumeText } from "../services/resumeParser.js";
+import { publishEvent } from "../config/kafka.js";
+
+export const computeHash = (text) => crypto.createHash("sha256").update((text || "").trim().toLowerCase().replace(/\s+/g, " ")).digest("hex");
 
 export const createResume = async (req, res) => {
     try {
@@ -13,14 +17,46 @@ export const createResume = async (req, res) => {
             });
         }
 
-        const resume = await Resume.create({
+        const contentHash = computeHash(rawText);
+
+        let resume = await Resume.findOne({
+            user: req.user._id,
+            $or: [{ contentHash }, { title: title.trim() }],
+        });
+
+        if (resume) {
+            resume.rawText = rawText;
+            resume.contentHash = contentHash;
+            resume.parsedProfile = parsedProfile || resume.parsedProfile;
+            if (fileName) resume.fileName = fileName;
+            if (fileUrl) resume.fileUrl = fileUrl;
+            resume.version = (resume.version || 1) + 1;
+            resume.status = "ready";
+            await resume.save();
+
+            return res.status(200).json({
+                success: true,
+                resume,
+                deduplicated: true,
+            });
+        }
+
+        resume = await Resume.create({
             user: req.user._id,
             title,
             rawText,
             fileName,
             fileUrl,
             parsedProfile,
+            contentHash,
             status: parsedProfile ? "ready" : "uploaded",
+        });
+
+        void publishEvent("resume.ingested", {
+            entityId: resume._id,
+            userId: req.user._id,
+            resumeId: resume._id,
+            source: "text",
         });
 
         return res.status(201).json({
@@ -74,15 +110,46 @@ export const uploadResume = async (req, res) => {
             });
         }
 
+        const contentHash = computeHash(rawText);
         const parsedProfile = parseResumeText(rawText);
 
-        const resume = await Resume.create({
+        let resume = await Resume.findOne({
+            user: req.user._id,
+            $or: [{ contentHash }, { fileName: req.file.originalname }],
+        });
+
+        if (resume) {
+            resume.rawText = rawText;
+            resume.contentHash = contentHash;
+            resume.parsedProfile = parsedProfile;
+            resume.title = req.body.title || resume.title || req.file.originalname.replace(/\.pdf$/i, "");
+            resume.fileName = req.file.originalname;
+            resume.version = (resume.version || 1) + 1;
+            resume.status = "ready";
+            await resume.save();
+
+            return res.status(200).json({
+                success: true,
+                resume,
+                deduplicated: true,
+            });
+        }
+
+        resume = await Resume.create({
             user: req.user._id,
             title: req.body.title || req.file.originalname.replace(/\.pdf$/i, ""),
             fileName: req.file.originalname,
             rawText,
             parsedProfile,
+            contentHash,
             status: "ready",
+        });
+
+        void publishEvent("resume.ingested", {
+            entityId: resume._id,
+            userId: req.user._id,
+            resumeId: resume._id,
+            source: "pdf",
         });
 
         return res.status(201).json({
@@ -97,3 +164,4 @@ export const uploadResume = async (req, res) => {
         });
     }
 };
+

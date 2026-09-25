@@ -37,6 +37,7 @@ const resumeSchema = new mongoose.Schema(
             projects: [projectSchema],
             education: [String],
         },
+        contentHash: { type: String, index: true },
         version: { type: Number, default: 1 },
         status: {
             type: String,
@@ -47,6 +48,10 @@ const resumeSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+resumeSchema.index({ user: 1, contentHash: 1 });
+resumeSchema.index({ user: 1, fileName: 1 });
+
 const Resume = mongoose.model("Resume", resumeSchema);
 
 export default Resume;
+

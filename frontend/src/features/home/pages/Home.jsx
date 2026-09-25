@@ -52,7 +52,7 @@ export default function Home() {
     return (
         <main className="home-shell">
             <nav className="home-nav" aria-label="Main navigation">
-                <a className="brand-mark" href="/dashboard">resume<span>/</span>ai</a>
+                <a className="brand-mark" href="/dashboard">career<span>signal</span></a>
                 <div className="home-nav-actions">
                     <span className="user-greeting">{user?.username || user?.email}</span>
                     <button className="text-button" type="button" onClick={logout}>Log out</button>
@@ -68,7 +68,7 @@ export default function Home() {
                     </p>
                     <div className="hero-actions">
                         <button className="primary-button" type="button" onClick={() => navigate('/analyze')}>Start a job match</button>
-                        <button className="secondary-button" type="button">View my profile</button>
+                        <button className="secondary-button" type="button" onClick={() => navigate('/profiles')}>Connect profiles</button>
                     </div>
                 </div>
                 <div className="progress-panel" aria-label="Getting started progress">

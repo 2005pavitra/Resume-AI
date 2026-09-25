@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
@@ -17,11 +17,15 @@ async function request(url, options) {
 
 export default function Analyze() {
     const { token } = useAuth();
+    const navigate = useNavigate();
+
     const [form, setForm] = useState({ title: '', company: '', rawText: '' });
     const [resumeFile, setResumeFile] = useState(null);
-    const [report, setReport] = useState(null);
+    const [targetType, setTargetType] = useState('comprehensive');
+    const [days, setDays] = useState(14);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submittingStep, setSubmittingStep] = useState('');
 
     const updateForm = (field, value) => {
         setForm((current) => ({ ...current, [field]: value }));
@@ -30,14 +34,14 @@ export default function Analyze() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError('');
-        setReport(null);
 
         if (!resumeFile) {
-            setError('Choose your resume PDF first.');
+            setError('Please choose your resume PDF file first.');
             return;
         }
 
         setIsSubmitting(true);
+        setSubmittingStep('Uploading & deduplicating resume...');
 
         try {
             const resumeData = new FormData();
@@ -50,6 +54,7 @@ export default function Analyze() {
                 body: resumeData,
             });
 
+            setSubmittingStep('Ingesting target job requirements...');
             const jobResponse = await request(`${API_URL}/api/jobs`, {
                 method: 'POST',
                 headers: {
@@ -63,6 +68,7 @@ export default function Analyze() {
                 }),
             });
 
+            setSubmittingStep('Running comparative analysis & preparation engine...');
             const analysisResponse = await request(`${API_URL}/api/analysis`, {
                 method: 'POST',
                 headers: {
@@ -72,13 +78,15 @@ export default function Analyze() {
                 body: JSON.stringify({
                     resumeId: resumeResponse.resume._id,
                     jobDescriptionId: jobResponse.jobDescription._id,
+                    days: Number(days),
+                    targetType,
                 }),
             });
 
-            setReport(analysisResponse.report);
+            setSubmittingStep('Ready! Redirecting to your report...');
+            navigate(`/reports/${analysisResponse.report._id}`);
         } catch (submitError) {
             setError(submitError.message);
-        } finally {
             setIsSubmitting(false);
         }
     };
@@ -86,14 +94,17 @@ export default function Analyze() {
     return (
         <main className="analysis-shell">
             <nav className="home-nav" aria-label="Analysis navigation">
-                <Link className="brand-mark" to="/dashboard">resume<span>/</span>ai</Link>
-                <Link className="text-button" to="/dashboard">Back to dashboard</Link>
+                <Link className="brand-mark" to="/dashboard">career<span>signal</span></Link>
+                <div className="home-nav-actions">
+                    <Link className="text-button" to="/profiles">Connected Profiles</Link>
+                    <Link className="text-button" to="/dashboard">Dashboard</Link>
+                </div>
             </nav>
 
             <header className="analysis-header">
-                <p className="eyebrow">New job match</p>
-                <h1>See how your experience maps to the role.</h1>
-                <p>Upload your resume and paste the job description. We will compare the evidence before making recommendations.</p>
+                <span className="section-eyebrow">Evidence-Based Career Analysis</span>
+                <h1>Map your experience to the target role.</h1>
+                <p>Upload your resume and the job description. Our explainable engine cross-references evidence from your resume, GitHub activity, and competitive programming profiles.</p>
             </header>
 
             <form className="analysis-form" onSubmit={handleSubmit}>
@@ -101,14 +112,18 @@ export default function Analyze() {
                     <div className="panel-heading">
                         <span className="panel-index">01</span>
                         <div>
-                            <h2>Your resume</h2>
-                            <p>Use a text-based PDF for the best extraction.</p>
+                            <h2>Your Resume</h2>
+                            <p>Upload your latest text-based PDF resume.</p>
                         </div>
                     </div>
                     <label className="file-drop">
-                        <span>{resumeFile ? resumeFile.name : 'Choose resume PDF'}</span>
-                        <small>{resumeFile ? 'Ready to analyze' : 'Maximum file size: 5 MB'}</small>
-                        <input type="file" accept="application/pdf,.pdf" onChange={(event) => setResumeFile(event.target.files[0] || null)} />
+                        <span className="file-name-display">{resumeFile ? `📄 ${resumeFile.name}` : '📁 Choose or drop your Resume PDF'}</span>
+                        <small>{resumeFile ? `${(resumeFile.size / 1024).toFixed(1)} KB • Ready for extraction` : 'Supports PDF up to 5 MB'}</small>
+                        <input
+                            type="file"
+                            accept="application/pdf,.pdf"
+                            onChange={(event) => setResumeFile(event.target.files[0] || null)}
+                        />
                     </label>
                 </section>
 
@@ -116,87 +131,111 @@ export default function Analyze() {
                     <div className="panel-heading">
                         <span className="panel-index">02</span>
                         <div>
-                            <h2>Target role</h2>
-                            <p>Paste the job description from the company site or LinkedIn.</p>
+                            <h2>Target Role & Company</h2>
+                            <p>Provide the job details and full job description text.</p>
                         </div>
                     </div>
                     <div className="analysis-fields">
                         <label>
-                            <span>Job title</span>
-                            <input value={form.title} onChange={(event) => updateForm('title', event.target.value)} placeholder="Backend Engineer" required />
+                            <span>Job Title</span>
+                            <input
+                                value={form.title}
+                                onChange={(event) => updateForm('title', event.target.value)}
+                                placeholder="e.g. Senior Backend Engineer"
+                                required
+                            />
                         </label>
                         <label>
-                            <span>Company <em>optional</em></span>
-                            <input value={form.company} onChange={(event) => updateForm('company', event.target.value)} placeholder="Example Inc." />
+                            <span>Company</span>
+                            <input
+                                value={form.company}
+                                onChange={(event) => updateForm('company', event.target.value)}
+                                placeholder="e.g. Stripe, Razorpay, Google"
+                            />
                         </label>
                     </div>
-                    <label>
-                        <span>Job description</span>
-                        <textarea value={form.rawText} onChange={(event) => updateForm('rawText', event.target.value)} placeholder="Paste the complete job description here..." rows="12" required />
+                    <label className="textarea-label">
+                        <span>Job Description Text</span>
+                        <textarea
+                            value={form.rawText}
+                            onChange={(event) => updateForm('rawText', event.target.value)}
+                            placeholder="Paste the complete job description, requirements, and responsibilities here..."
+                            rows="10"
+                            required
+                        />
                     </label>
                 </section>
 
-                {error && <p className="form-error" role="alert">{error}</p>}
-                <button className="primary-button analysis-submit" type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Analyzing your match...' : 'Generate my match report'}
-                </button>
-            </form>
-
-            {report && (
-                <section className="report-panel" aria-labelledby="report-title">
-                    <div className="report-score">
-                        <p className="eyebrow">Your job fit</p>
-                        <strong>{report.overallFit}</strong><span>/100</span>
+                <section className="input-panel">
+                    <div className="panel-heading">
+                        <span className="panel-index">03</span>
+                        <div>
+                            <h2>Sprint Customization</h2>
+                            <p>Configure the preparation roadmap based on your upcoming round.</p>
+                        </div>
                     </div>
-                    <div className="report-content">
-                        <h2 id="report-title">A clear starting point for this role.</h2>
-                        {report.aiInsights?.summary ? (
-                            <div className="ai-insights">
-                                <p className="eyebrow">AI perspective</p>
-                                <p>{report.aiInsights.summary}</p>
-                                <ul>
-                                    {report.aiInsights.recommendations.map((recommendation) => (
-                                        <li key={recommendation}>{recommendation}</li>
-                                    ))}
-                                </ul>
+
+                    <div className="sprint-config-grid">
+                        <div className="sprint-config-item">
+                            <span className="sprint-label">Preparation Target:</span>
+                            <div className="pill-selector">
+                                <button
+                                    type="button"
+                                    className={`pill-btn ${targetType === 'comprehensive' ? 'active' : ''}`}
+                                    onClick={() => setTargetType('comprehensive')}
+                                >
+                                    🎯 Full Loop
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`pill-btn ${targetType === 'oa' ? 'active' : ''}`}
+                                    onClick={() => setTargetType('oa')}
+                                >
+                                    💻 Online Assessment (OA)
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`pill-btn ${targetType === 'technical' ? 'active' : ''}`}
+                                    onClick={() => setTargetType('technical')}
+                                >
+                                    ⚙️ Tech & System Design
+                                </button>
                             </div>
-                        ) : (
-                            <div className="ai-insights ai-insights-fallback">
-                                <p className="eyebrow">AI perspective</p>
-                                <p>AI enrichment was unavailable, so this report is based on the explainable comparison engine.</p>
-                            </div>
-                        )}
-                        <div className="score-grid">
-                            {Object.entries(report.scoreBreakdown).map(([key, value]) => (
-                                <div key={key} className="score-item">
-                                    <span>{key.replace(/([A-Z])/g, ' $1')}</span>
-                                    <strong>{value}%</strong>
-                                </div>
-                            ))}
                         </div>
-                        <div className="requirements-list">
-                            <h3>Requirement evidence</h3>
-                            {report.requirementMatches?.map((match) => (
-                                <div className={`requirement-row ${match.matched ? 'is-matched' : 'is-missing'}`} key={`${match.category}-${match.requirement}`}>
-                                    <span className="requirement-status">{match.matched ? 'Matched' : 'Missing'}</span>
-                                    <strong>{match.requirement}</strong>
-                                    <span>{match.evidence}</span>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="report-columns">
-                            <div>
-                                <h3>Skill gaps</h3>
-                                {report.gaps.length ? <ul>{report.gaps.map((gap) => <li key={gap.skill}>{gap.skill}<span>{gap.priority.replace('_', ' ')}</span></li>)}</ul> : <p>No immediate skill gaps found.</p>}
-                            </div>
-                            <div>
-                                <h3>Next preparation steps</h3>
-                                {report.preparationPlan.length ? <ul>{report.preparationPlan.map((item) => <li key={item.topic}>Days {item.dayStart}-{item.dayEnd}: {item.topic}</li>)}</ul> : <p>Your profile is ready for deeper interview preparation.</p>}
+
+                        <div className="sprint-config-item">
+                            <span className="sprint-label">Days Until Round:</span>
+                            <div className="days-selector">
+                                {[3, 7, 14, 30].map((d) => (
+                                    <button
+                                        key={d}
+                                        type="button"
+                                        className={`day-btn ${days === d ? 'active' : ''}`}
+                                        onClick={() => setDays(d)}
+                                    >
+                                        {d} Days
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </section>
-            )}
+
+                {error && <p className="form-error" role="alert">{error}</p>}
+
+                <div className="submit-action-row">
+                    <button className="primary-button analysis-submit-btn" type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <span className="btn-loading-content">
+                                <span className="spinner-sm" />
+                                {submittingStep || 'Processing match...'}
+                            </span>
+                        ) : (
+                            'Generate My Match Report →'
+                        )}
+                    </button>
+                </div>
+            </form>
         </main>
     );
 }

@@ -1,4 +1,4 @@
-import { createContext, createElement, useContext, useEffect, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
@@ -88,7 +88,7 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const getCurrentUser = async () => {
+    const getCurrentUser = useCallback(async () => {
         if (!token) return null;
 
         const response = await fetch(`${API_URL}/api/auth/me`, {
@@ -108,7 +108,11 @@ export function AuthProvider({ children }) {
 
         setUser(data.user);
         return data.user;
-    };
+    }, [token]);
+
+    useEffect(() => {
+        if (token) queueMicrotask(() => getCurrentUser());
+    }, [getCurrentUser, token]);
 
     const value = {
         user,

@@ -13,10 +13,15 @@ const jobDescriptionSchema = new mongoose.Schema(
             responsibilities: [String],
             experienceLevel: String,
         },
+        contentHash: { type: String, index: true },
     },
     { timestamps: true }
 );
 
+jobDescriptionSchema.index({ user: 1, contentHash: 1 });
+jobDescriptionSchema.index({ user: 1, title: 1, company: 1 });
+
 const JobDescription = mongoose.model("JobDescription", jobDescriptionSchema);
 
 export default JobDescription;
+

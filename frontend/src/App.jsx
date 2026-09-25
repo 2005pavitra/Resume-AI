@@ -6,6 +6,7 @@ import Protected from './features/auth/components/Protected';
 import { useAuth } from './features/auth/hooks/useAuth';
 import Analyze from './features/analysis/pages/Analyze';
 import Report from './features/analysis/pages/Report';
+import Profiles from './features/profiles/pages/Profiles';
 
 export default function App() {
   const { user } = useAuth();
@@ -36,6 +37,14 @@ export default function App() {
         element={
           <Protected user={user}>
             <Report />
+          </Protected>
+        }
+      />
+      <Route
+        path="/profiles"
+        element={
+          <Protected user={user}>
+            <Profiles />
           </Protected>
         }
       />
