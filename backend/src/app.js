@@ -17,6 +17,7 @@ const configuredOrigins = (process.env.FRONTEND_URL || "")
     .filter(Boolean);
 
 const defaultOrigins = [
+    "https://resume-ai-eight-zeta.vercel.app",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:3000",
@@ -24,19 +25,30 @@ const defaultOrigins = [
 
 const allowedOrigins = new Set([...defaultOrigins, ...configuredOrigins]);
 
+const isOriginAllowed = (origin) => {
+    if (!origin) return true;
+    if (process.env.FRONTEND_URL === "*") return true;
+
+    const normalized = origin.replace(/\/$/, "");
+    if (allowedOrigins.has(normalized)) return true;
+
+    // Automatically allow all Vercel deployments (production + branch previews)
+    if (/^https:\/\/.*\.vercel\.app$/.test(normalized)) return true;
+
+    return false;
+};
+
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (process.env.FRONTEND_URL === "*") return callback(null, true);
-
-        const normalizedOrigin = origin.replace(/\/$/, "");
-        if (allowedOrigins.has(normalizedOrigin)) {
+        if (isOriginAllowed(origin)) {
             return callback(null, true);
         }
-
-        return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+        return callback(null, false);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    optionsSuccessStatus: 200,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
