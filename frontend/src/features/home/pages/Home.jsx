@@ -12,8 +12,7 @@ import {
     MicIcon,
     FolderOpenIcon
 } from '../../../components/Icons';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import { API_URL } from '../../../config/api';
 
 export default function Home() {
     const { user, token, logout } = useAuth();

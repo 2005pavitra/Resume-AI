@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { SignalLogo, GitBranchIcon, CodeIcon, TerminalIcon, TargetIcon } from '../../../components/Icons';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import { API_URL } from '../../../config/api';
 
 const providers = [
     {

@@ -2,8 +2,7 @@ import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { SignalLogo, UploadCloudIcon, FileTextIcon } from '../../../components/Icons';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import { API_URL } from '../../../config/api';
 
 async function request(url, options) {
     const response = await fetch(url, options);

@@ -50,6 +50,13 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     optionsSuccessStatus: 200,
 }));
+app.use((req, res, next) => {
+    if (req.url.includes("//")) {
+        req.url = req.url.replace(/\/+/g, "/");
+    }
+    next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -65,6 +72,14 @@ app.use("/api/resumes", resumeRoutes);
 app.use("/api/jobs", jobDescriptionRoutes);
 app.use("/api/analysis", analysisRoutes);
 app.use("/api/profiles", externalProfileRoutes);
+
+// JSON 404 Fallback for unhandled routes
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: `Route not found: ${req.method} ${req.originalUrl}`,
+    });
+});
 
 app.use((err, req, res, next) => {
     console.error(err.stack);
